@@ -26,7 +26,7 @@ def outlierCleaner(predictions, ages, net_worths):
 #         print j
         cleaned_data.pop()
         
-#     print len(cleaned_data)
+    print len(cleaned_data)
     
     return cleaned_data
 
