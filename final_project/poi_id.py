@@ -50,11 +50,11 @@ def plotScatter(dat, title, labels=features_list):
     plt.title(title)
     plt.show()
     
-# plotScatter(data, "Before Outlier Removal")
+plotScatter(data, "Before Outlier Removal")
 data_dict.pop("THE TRAVEL AGENCY IN THE PARK", 0)
 data_dict.pop("TOTAL", 0)
 data = featureFormat(my_dataset, features_list, sort_keys=True, remove_all_zeroes=False)
-# plotScatter(data, "After Outlier Removal")
+plotScatter(data, "After Outlier Removal")
 
 ### Task 3: Create new feature(s)
 from sklearn.preprocessing import MinMaxScaler
@@ -255,20 +255,24 @@ print getAccuracy(scalepcasvc), ": Scale, PCA, DecisionTree"
 from sklearn.grid_search import GridSearchCV as GridSVC
 from sklearn.metrics import classification_report as classReport
 
-paramsvc = dict(
+param = dict(
     pca__n_components = [1, 2, 3, 4, 5, 6],
-    svc__kernel = ["linear", "rbf"],
-    svc__C = [1, 10, 20, 50, 100] )
+    dtc__min_samples_split = [2, 4]
+)
 
-clf = GridSVC(scalepcasvc, param_grid=paramsvc)
+clf = GridSVC(scalepcadtc, param_grid=param)
 
 def getClassReport(pipe):
     pipe.fit(features_train, labels_train)
     pred = pipe.predict(features_test)
     return classReport(labels_test, pred)
 
-print getAccuracy(clf), ": clf Score"
+print getAccuracy(clf), ": Accuracy Score"
 print getClassReport(clf)
+
+from sklearn.metrics import precision_score
+clf.fit(features_train, labels_train)
+pred = clf.predict(features_test)
 
 ### Task 6: Dump your classifier, dataset, and features_list so anyone can
 ### check your results. You do not need to change anything below, but make sure
