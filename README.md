@@ -355,8 +355,7 @@ print getAccuracy(scalepcasvc), ": Scale, PCA, DecisionTree"
 
 
 ## 4.1. Tune Best Algorithm
-After selecting my classifier, I then tune the parameters in an attempt to find the appropriate configuration that would give me the best results. If I do not do this well or if I do not do it at all, I will run the risk of missing out on the best configuration of my chosen classifier. To help me tune my parameters, I will be using *GridSearchCV* to help me run several versions of the parameters and find the best one. I include a range of n_components configuration for my PCA ranging from 1 to 6 components. I then try linear and rbf kernels from my SVC and a range sequence of C parameters from 1 to 100.
-
+After selecting my classifier, I then tune the parameters in an attempt to find the appropriate configuration that would give me the best results. If I do not do this well or if I do not do it at all, I will run the risk of missing out on the best configuration of my chosen classifier. To help me tune my parameters, I will be using *GridSearchCV* to help me run several versions of the parameters and find the best one. I configured my GridSearch to find the best possible score through a confiration of PCA ranging from 1 to 6 components and a DecisionTreeClassifier that had minimum sample split of 2 and 4.
 
 ```python
 ### Task 5: Tune your classifier to achieve better than .3 precision and recall
@@ -369,30 +368,30 @@ After selecting my classifier, I then tune the parameters in an attempt to find 
 from sklearn.grid_search import GridSearchCV as GridSVC
 from sklearn.metrics import classification_report as classReport
 
-paramsvc = dict(
+param = dict(
     pca__n_components = [1, 2, 3, 4, 5, 6],
-    svc__kernel = ["linear", "rbf"],
-    svc__C = [1, 10, 20, 50, 100] )
+    dtc__min_samples_split = [2, 4]
+)
 
-clf = GridSVC(scalepcasvc, param_grid=paramsvc)
+clf = GridSVC(scalepcadtc, param_grid=param)
 ```
 
 ## 5.1. Validation
 Validation is an important part of the machine learning process because it allows us to check our algoritm's effectiveness. The aim of machine learning is to effectively classify certain datapoints based on their features with the highest precision and accuracy. But not too high that we run into overfitting. Through validation, we are able to determine if we are overfitting or if we are not getting an efficient algorithm.
 
 ## 6.1. Evaluation Metrics
-Running getClassReport, I get an accuracy score of 0.89, which is the same score had I not tuned the parameters. This is to be expected because we are working with a small dataset that does not have that much datapoints.
+Running getClassReport, I get an accuracy score of 0.91, which is higher than an accuracy score of 0.89 had I not tuned the parameters.
 
-After running the *getClassReport*, I get an average precision score of 0.79, which means that my classifier is able to correctly predict 79% of people as a POI based on their features. I also got a recall score of 0.89, which means that my classifier is able to identify 0.89 of the pople as a POI correctly based on their features.
+After running the *getClassReport*, I get an average precision score of 0.67, which means that my classifier is able to correctly predict 67% of people as a POI based on their features. I also got a recall score of 0.40, which means that my classifier is able to identify 0.40 of the pople as a POI correctly based on their features.
 
-    Accuracy Score: 0.89
+
+    Accuracy Score: 0.91
 
     Validation Score
     labels    precis    recall    F1       support
-    0.0       0.89      1.00      0.94     39
-    1.0       0.00      0.00      0.00      5
-              0.79      0.89      0.83     44      avg / total
-
+    0.0       0.93      0.97      0.95     39
+    1.0       0.67      0.40      0.50      5
+              0.90      0.91      0.90     44      avg / total
 
 ```python
 def getClassReport(pipe):
@@ -400,8 +399,12 @@ def getClassReport(pipe):
     pred = pipe.predict(features_test)
     return classReport(labels_test, pred)
 
-print getAccuracy(clf), ": clf Score"
+print getAccuracy(clf), ": Accuracy Score"
 print getClassReport(clf)
+
+from sklearn.metrics import precision_score
+clf.fit(features_train, labels_train)
+pred = clf.predict(features_test)
 ```
 
 ```python
