@@ -412,3 +412,13 @@ print getClassReport(clf)
 
 dump_classifier_and_data(clf, my_dataset, features_list)
 ```
+## Sources
+- https://www.civisanalytics.com/blog/workflows-in-python-using-pipeline-and-gridsearchcv-for-more-compact-and-comprehensive-code/
+- http://abshinn.github.io/python/sklearn/2014/06/08/grid-searching-in-all-the-right-places/
+- http://scikit-learn.org/stable/auto_examples/model_selection/grid_search_text_feature_extraction.html
+- http://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.GaussianNB.html
+- http://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html
+- http://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html
+- http://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html
+- http://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectKBest.html
+- http://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html
