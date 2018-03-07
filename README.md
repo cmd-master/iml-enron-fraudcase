@@ -81,11 +81,11 @@ plotScatter(data, "After Outlier Removal")
 ```
 
 
-![png](img\output_3_0.png)
+![png](img/output_3_0.png)
 
 
 
-![png](img\output_3_1.png)
+![png](img/output_3_1.png)
 
 
 ## 2.2. Create New Features
@@ -178,7 +178,7 @@ my_dataset = addNewFeature(my_dataset, emailto_poi, "emailto_poi")
 ```
 
 
-![png](img\output_5_0.png)
+![png](img/output_5_0.png)
 
 
 ## 2.2. Test Custom Features
