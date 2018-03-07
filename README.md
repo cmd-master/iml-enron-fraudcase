@@ -55,7 +55,7 @@ data = featureFormat(my_dataset, features_list, sort_keys=True, remove_all_zeroe
     Count of POI:  18
 
 ## 1.3. Outlier Removal
-I made a scatter plot with salary and bonus in my axis to see any outliers in the dataset. Upon investigation, I discovered that *TOTAL* is included in the dataset, which is an outlier. In addition, I am seeing *THE TRAVEL AGENCY IN THE PARK* as another entry. Since we are developing a *Person* of Interest detector, we remove this non-person entry.
+I made a scatter plot with salary and bonus in my axis to see any outliers in the dataset. Upon investigation, I discovered that *TOTAL* is included in the dataset, which is an outlier. In addition, I am seeing *THE TRAVEL AGENCY IN THE PARK* as another entry. Since we are developing a *Person* of of Interest detector, we remove this non-person entry.
 
 
 ```python
@@ -81,17 +81,17 @@ plotScatter(data, "After Outlier Removal")
 ```
 
 
-![png](img/output_3_0.png)
+![png](img\output_3_0.png)
 
 
 
-![png](img/output_3_1.png)
+![png](img\output_3_1.png)
 
 
-## 2.1. Create New Features
-I suspect that POIs would be the ones who are either getting the most salaries or bonuses. But simply adding these two features would give us inconsistent results since they vary in scales. Therefore, for my first feature, I add the scaled versions of the salary and bonus and call it *bonus_salary*.
+## 2.2. Create New Features
+I suspect that POIs would be the ones who are either getting the most salaries or bonuses. But simply adding these two features would give us inconsistent results since they vary in scales. Therefore, for my first feature, I add the scaled versions of the salary and bonus and call it *bonus_salary*. In addition, **I have scaled all the features in the features_list to effectively normalize the features.**
 
-I also assumed that POIs have a small circle and they would have constant communication with each other. AS a result, for my Second Feature, I divide the total emails sent to a POI over the total sent emails and call it *emailto_poi*.
+I also assumed that POIs have a small circle and they would have constant communication with each other. AS a result, for my second feature, I divide the total emails sent to a POI over the total sent emails and call it *emailto_poi*.
 
 
 ```python
@@ -178,24 +178,40 @@ my_dataset = addNewFeature(my_dataset, emailto_poi, "emailto_poi")
 ```
 
 
-![png](img/output_5_0.png)
+![png](img\output_5_0.png)
 
 
 ## 2.2. Test Custom Features
 After creating my new features, I put them to the test. Below are the results:
 
-- SVM:  0.8864
-- Decision Tree:  0.8636
-- Gaussian:  0.8409
+SVM
+- accuracy score:  0.8864
+- precision score:  0.0
+- recall score:  0.0
 
-SVM is a stronger classifier than the rest, granted that I have not configured the parameters. This is a good first step in exploring my data. I add *bonus_salary* and *emailto_poi* to my_dataset.
+Decision Tree
+- accuracy score:  0.8636
+- precision score:  0.3333
+- recall score:  0.2
+
+Gaussian
+- accuracy score:  0.8409
+- precision score:  0.0
+- recall score:  0.0
+
+The SVM seems to be producing the greatest accuracy score but it is not good in identifying our POIs in terms of precision and recall. The second best classifier is the Decision Tree where it scored 0.8638 in accuracy and was able to score 0.33 and 0.2 in precision and recall, respectively. Using Gaussian Naive Bayes as a classifier is the least performing amongst the 3 classifiers.
+
+I add *bonus_salary* and *emailto_poi* to my_dataset.
 
 
 ```python
-from sklearn.metrics import accuracy_score
-from sklearn.naive_bayes import GaussianNB as GNB
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier as DTC
+from sklearn.naive_bayes import GaussianNB as GNB
+
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import precision_score
+from sklearn.metrics import recall_score
 
 data = featureFormat(my_dataset, features_list, sort_keys=True, remove_all_zeroes=False)
 labels, features = targetFeatureSplit(data)
@@ -208,30 +224,45 @@ features_train, features_test, labels_train, labels_test = \
 clf = SVC()
 clf.fit(features_train, labels_train)
 pred = clf.predict(features_test)
-print "SVM: ", round(accuracy_score(labels_test, pred), 4)
+print "SVM accuracy score: ", round(accuracy_score(labels_test, pred), 4)
+print "SVM precision score: ", round(precision_score(labels_test, pred), 4)
+print "SVM recall score: ", round(recall_score(labels_test, pred), 4)
+print
 
 clf = DTC()
 clf.fit(features_train, labels_train)
 pred = clf.predict(features_test)
-print "Decision Tree: ", round(accuracy_score(labels_test, pred), 4)
+print "Decision Tree accuracy score: ", round(accuracy_score(labels_test, pred), 4)
+print "Decision Tree precision score: ", round(precision_score(labels_test, pred), 4)
+print "Decision Tree recall score: ", round(recall_score(labels_test, pred), 4)
+print
 
 clf = GNB()
 clf.fit(features_train, labels_train)
 pred = clf.predict(features_test)
-print "Gaussian: ", round(accuracy_score(labels_test, pred), 4)
+print "Gaussian accuracy score: ", round(accuracy_score(labels_test, pred), 4)
+print "Gaussian precision score: ", round(precision_score(labels_test, pred), 4)
+print "Gaussian recall score: ", round(recall_score(labels_test, pred), 4)
+print
 ```
 
-    SVM:  0.8864
-    Decision Tree:  0.8636
-    Gaussian:  0.8409
+    SVM accuracy score:  0.8864
+    SVM precision score:  0.0
+    SVM recall score:  0.0
 
+    Decision Tree accuracy score:  0.8636
+    Decision Tree precision score:  0.3333
+    Decision Tree recall score:  0.2
+
+    Gaussian accuracy score:  0.8409
+    Gaussian precision score:  0.0
+    Gaussian recall score:  0.0
 
 ## 2.3. Automated Feature Selection
-I want to make sure that I have covered everything, therefore, after adding my new features to *my_dataset*, I use SelectKBest to choose the best features that would give me the most information. Then, I print out each feature ranked according to their scores. Reviewing the results, it seems that my features are within the the top 6 of the best features.
+I want to make sure that I have covered everything. So, after adding my new features to *my_dataset*, I use SelectKBest to choose the best features that would give me the most information. Then, I print out each feature ranked according to their scores. Reviewing the results, it seems that my features are within the the top 6 of the best features.
 
 
 ```python
-from sklearn.cross_validation import train_test_split
 from sklearn.feature_selection import SelectKBest
 
 data = featureFormat(my_dataset, features_list,
@@ -287,7 +318,7 @@ print feature_sc
 
 
 ## 3.1. Try a Variety of Classifiers and Pick the Best
-After trying several Classifiers, I ended up choosing *scalepcasvc* as my classifier because it had the highest accuracy score amongst the other classifiers that I have used. Below are the results of each classifier that I have used and the sequence of model.
+After trying several Classifiers, I ended up choosing *scalepcadtc* as my classifier because it had the highest accuracy score amongst the other classifiers that I have used. Below are the results of each classifier that I have used and the sequence of model.
 
 - 0.89 : SelectKBest, RandomForest
 - 0.89 : Scale, PCA, SVC
@@ -304,12 +335,10 @@ After trying several Classifiers, I ended up choosing *scalepcasvc* as my classi
 
 # Provided to give you a starting point. Try a variety of classifiers.
 
-from sklearn.cross_validation import train_test_split
-from sklearn.feature_selection import SelectKBest
 from sklearn.ensemble import RandomForestClassifier as RFC
 from sklearn.pipeline import Pipeline
 from sklearn.decomposition import PCA
-from sklearn.svm import SVC
+from sklearn.metrics import classification_report as classReport
 
 def doPipes(steps):
     pipe = Pipeline(steps)
@@ -319,6 +348,11 @@ def doPipes(steps):
 def getAccuracy(pipe):
     pred = pipe.fit(features_train, labels_train).predict(features_test)
     return round(accuracy_score(labels_test, pred), 2)
+
+def getClassReport(pipe):
+    pipe.fit(features_train, labels_train)
+    pred = pipe.predict(features_test)
+    return classReport(labels_test, pred)
 
 scalepcasvc = doPipes([
     ("scale", MinMaxScaler()),
@@ -342,20 +376,58 @@ scalepcadtc = doPipes([
     ("dtc", DTC())
 ])
 
-print getAccuracy(selectKrfc), ": SelectKBest, RandomForest"
-print getAccuracy(scalepcasvc), ": Scale, PCA, SVC"
-print getAccuracy(selectKsteps), ": SelectKBest, GaussianNB"
-print getAccuracy(scalepcasvc), ": Scale, PCA, DecisionTree"
+print "SelectKBest, RandomForest"
+print getAccuracy(selectKrfc), ": Accuracy Score"
+print getClassReport(selectKrfc)
+print "Scale, PCA, SVC"
+print getAccuracy(scalepcasvc), ": Accuracy Score"
+print getClassReport(scalepcasvc)
+print "SelectKBest, GaussianNB"
+print getAccuracy(selectKsteps), ": Accuracy Score"
+print getClassReport(selectKsteps)
+print "Scale, PCA, DecisionTree"
+print getAccuracy(scalepcadtc), ": Accuracy Score"
+print getClassReport(scalepcadtc)
 ```
 
-    0.89 : SelectKBest, RandomForest
-    0.89 : Scale, PCA, SVC
-    0.86 : SelectKBest, GaussianNB
-    0.89 : Scale, PCA, DecisionTree
+    SelectKBest, RandomForest
+    0.89 : Accuracy Score
+                 precision    recall  f1-score   support
 
+            0.0       0.89      1.00      0.94        39
+            1.0       0.00      0.00      0.00         5
+
+    avg / total       0.79      0.89      0.83        44
+
+    Scale, PCA, SVC
+    0.89 : Accuracy Score
+                 precision    recall  f1-score   support
+
+            0.0       0.89      1.00      0.94        39
+            1.0       0.00      0.00      0.00         5
+
+    avg / total       0.79      0.89      0.83        44
+
+    SelectKBest, GaussianNB
+    0.86 : Accuracy Score
+                 precision    recall  f1-score   support
+
+            0.0       0.92      0.92      0.92        39
+            1.0       0.40      0.40      0.40         5
+
+    avg / total       0.86      0.86      0.86        44
+
+    Scale, PCA, DecisionTree
+    0.84 : Accuracy Score
+                 precision    recall  f1-score   support
+
+            0.0       0.90      0.90      0.90        39
+            1.0       0.20      0.20      0.20         5
+
+    avg / total       0.82      0.82      0.82        44
 
 ## 4.1. Tune Best Algorithm
-After selecting my classifier, I then tune the parameters in an attempt to find the appropriate configuration that would give me the best results. If I do not do this well or if I do not do it at all, I will run the risk of missing out on the best configuration of my chosen classifier. To help me tune my parameters, I will be using *GridSearchCV* to help me run several versions of the parameters and find the best one. I configured my GridSearch to find the best possible score through a confiration of PCA ranging from 1 to 6 components and a DecisionTreeClassifier that had minimum sample split of 2 and 4.
+After selecting my classifier, I then tune the parameters in an attempt to find the appropriate configuration that would give me the best results. If I do not do this well or if I do not do it at all, I will run the risk of missing out on the best configuration of my chosen classifier. To help me tune my parameters, I will be using *GridSearchCV* to help me run several versions of the parameters and find the best one. I try a PCA range from 1 to 6 components and a DecisionTreeClassifier that had minimum sample split of 2 and 4.
 
 ```python
 ### Task 5: Tune your classifier to achieve better than .3 precision and recall
@@ -366,46 +438,101 @@ After selecting my classifier, I then tune the parameters in an attempt to find 
 ### http://scikit-learn.org/stable/modules/generated/sklearn.cross_validation.StratifiedShuffleSplit.html
 
 from sklearn.grid_search import GridSearchCV as GridSVC
-from sklearn.metrics import classification_report as classReport
 
 param = dict(
     pca__n_components = [1, 2, 3, 4, 5, 6],
     dtc__min_samples_split = [2, 4]
 )
 
-clf = GridSVC(scalepcadtc, param_grid=param)
+clf = scalepcadtc # My Best Algorithm
+
+cv = GridSVC(scalepcadtc, param_grid=param)
 ```
 
 ## 5.1. Validation
-Validation is an important part of the machine learning process because it allows us to check our algoritm's effectiveness. The aim of machine learning is to effectively classify certain datapoints based on their features with the highest precision and accuracy. But not too high that we run into overfitting. Through validation, we are able to determine if we are overfitting or if we are not getting an efficient algorithm.
+Validation allows us to check our algoritm's effectiveness by splitting our dataset where we can train our algorithm on one set and test on another, which helps us check for overfitting.
+
+In this analysis, I have been using *train_test_split* to split our data where 30% goes to testing and 70% goes to training set. But to test my best algorithm and the alternative algorithm, I use *StratifiedShuffleSplit*, which returns a a stratified randomized folds. I maintained splits of 2 and a test size of 30%. This is much better than *train_test_split* because it shuffles the dataset while keeping the percentage of the target class to the overall dataset, which is ideal for a small dataset such as this one.
 
 ## 6.1. Evaluation Metrics
-Running getClassReport, I get an accuracy score of 0.91, which is higher than an accuracy score of 0.89 had I not tuned the parameters.
+Running getClassReport, I get an accuracy score of 0.82 for my chosen classifier. After running the *getClassReport*, I get an average precision score of 0.29, which means that my classifier has a 29% of a chance to correctly identify a POI out of the all of the items labeled as POIs in the dataset. I also got a recall score of 0.40, which means that, out of the total True POIs, our algorithm is able to identify 40% of the True POIs.
 
-After running the *getClassReport*, I get an average precision score of 0.67, which means that my classifier is able to correctly predict 67% of people as a POI based on their features. I also got a recall score of 0.40, which means that my classifier is able to identify 0.40 of the pople as a POI correctly based on their features.
+The best parameters according to the Grid Search is if we set the *min_samples_split* of the Decision Tree Classifier to 2 and if we select only 1 component in the PCA. We can say that this PCA component explains 22% of the variation in the data.
 
-
-    Accuracy Score: 0.91
+    Best Algorithm
+    Scale, PCA, DTC
+    0.82: Accuracy Score
 
     Validation Score
     labels    precis    recall    F1       support
-    0.0       0.93      0.97      0.95     39
-    1.0       0.67      0.40      0.50      5
+    0.0       0.92      0.87      0.89     39
+    1.0       0.29      0.40      0.33      5
               0.90      0.91      0.90     44      avg / total
 
+    Best Parameters:  {'dtc__min_samples_split': 2, 'pca__n_components': 1}
+    PCA explained variance:  [ 0.22663112]
+
+Had I chosen the *scalepcasvc* (without tuning the parameters), it will give me a high accuracy score of 0.89 but a 0.0 precision score and 0.0 recall score in identifying POIs. Accuracy simply takes the number of points that the algorithm has labeled correctly, either 0.0 or 1.0, and divide it by the total number of datapoints. In this scenario, our algorithm is able to recall all non-POIs (labeled 0.0) but it was not able to recall any POIs (labeled 1.0). In addition, with a precision of 0.89 at identifying non-POIs, I would suspect that the algorithm are just identifying all datapoints as non-POIs.
+
+    Alternative Algorithm
+    Scale, PCA, SVC
+    0.89 : Accuracy Score
+
+    Validation Score
+                 precision    recall  f1-score   support
+
+            0.0       0.89      1.00      0.94        39
+            1.0       0.00      0.00      0.00         5
+
+    avg / total       0.79      0.89      0.83        44
+
+
+
+
 ```python
-def getClassReport(pipe):
-    pipe.fit(features_train, labels_train)
-    pred = pipe.predict(features_test)
-    return classReport(labels_test, pred)
+from sklearn.model_selection import StratifiedShuffleSplit
 
-print getAccuracy(clf), ": Accuracy Score"
-print getClassReport(clf)
+sss = StratifiedShuffleSplit(n_splits=2, test_size=0.3, random_state=0)
+for train, test in sss.split(features, labels):
+    features_train = [features[ii] for ii in train]
+    features_test = [features[ii] for ii in test]
+    labels_train = [labels[ii] for ii in train]
+    labels_test = [labels[ii] for ii in test]
 
-from sklearn.metrics import precision_score
-clf.fit(features_train, labels_train)
-pred = clf.predict(features_test)
+print "Best Algorithm"
+print getAccuracy(cv), ": Accuracy Score"
+print getClassReport(cv)
+print "Best Parameters: ", cv.best_params_
+print "PCA explained variance: ", cv.best_estimator_.named_steps["pca"].explained_variance_
+print
+print "Alternative Algorithm"
+print getAccuracy(scalepcasvc), ": Accuracy Score"
+print getClassReport(scalepcasvc)
 ```
+
+    Best Algorithm
+    0.82 : Accuracy Score
+                 precision    recall  f1-score   support
+
+            0.0       0.92      0.87      0.89        39
+            1.0       0.29      0.40      0.33         5
+
+    avg / total       0.85      0.82      0.83        44
+
+    Best Parameters:  {'dtc__min_samples_split': 2, 'pca__n_components': 1}
+    PCA explained variance:  [ 0.22663112]
+
+    Alternative Algorithm
+    0.89 : Accuracy Score
+                 precision    recall  f1-score   support
+
+            0.0       0.89      1.00      0.94        39
+            1.0       0.00      0.00      0.00         5
+
+    avg / total       0.79      0.89      0.83        44
+
+
+
 
 ```python
 ### Task 6: Dump your classifier, dataset, and features_list so anyone can
@@ -415,6 +542,7 @@ pred = clf.predict(features_test)
 
 dump_classifier_and_data(clf, my_dataset, features_list)
 ```
+
 ## Sources
 - https://www.civisanalytics.com/blog/workflows-in-python-using-pipeline-and-gridsearchcv-for-more-compact-and-comprehensive-code/
 - http://abshinn.github.io/python/sklearn/2014/06/08/grid-searching-in-all-the-right-places/
@@ -425,3 +553,4 @@ dump_classifier_and_data(clf, my_dataset, features_list)
 - http://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html
 - http://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectKBest.html
 - http://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html
+- http://scikit-learn.org/stable/modules/generated/sklearn.model_selection.StratifiedShuffleSplit.html

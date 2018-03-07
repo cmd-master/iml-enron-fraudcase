@@ -137,10 +137,13 @@ plotComparison(labels, emailto_poi, bonus_sm)
 my_dataset = addNewFeature(my_dataset, bonus_sm, "bonus_salary")
 my_dataset = addNewFeature(my_dataset, emailto_poi, "emailto_poi")
 
-from sklearn.metrics import accuracy_score
-from sklearn.naive_bayes import GaussianNB as GNB
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier as DTC
+from sklearn.naive_bayes import GaussianNB as GNB
+
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import precision_score
+from sklearn.metrics import recall_score
 
 data = featureFormat(my_dataset, features_list, sort_keys=True, remove_all_zeroes=False)
 labels, features = targetFeatureSplit(data)
@@ -153,19 +156,27 @@ features_train, features_test, labels_train, labels_test = \
 clf = SVC()
 clf.fit(features_train, labels_train)
 pred = clf.predict(features_test)
-print "SVM: ", round(accuracy_score(labels_test, pred), 4)
+print "SVM accuracy score: ", round(accuracy_score(labels_test, pred), 4)
+print "SVM precision score: ", round(precision_score(labels_test, pred), 4)
+print "SVM recall score: ", round(recall_score(labels_test, pred), 4)
+print
 
 clf = DTC()
 clf.fit(features_train, labels_train)
 pred = clf.predict(features_test)
-print "Decision Tree: ", round(accuracy_score(labels_test, pred), 4)
+print "Decision Tree accuracy score: ", round(accuracy_score(labels_test, pred), 4)
+print "Decision Tree precision score: ", round(precision_score(labels_test, pred), 4)
+print "Decision Tree recall score: ", round(recall_score(labels_test, pred), 4)
+print
 
 clf = GNB()
 clf.fit(features_train, labels_train)
 pred = clf.predict(features_test)
-print "Gaussian: ", round(accuracy_score(labels_test, pred), 4)
+print "Gaussian accuracy score: ", round(accuracy_score(labels_test, pred), 4)
+print "Gaussian precision score: ", round(precision_score(labels_test, pred), 4)
+print "Gaussian recall score: ", round(recall_score(labels_test, pred), 4)
+print
 
-from sklearn.cross_validation import train_test_split
 from sklearn.feature_selection import SelectKBest
 
 data = featureFormat(my_dataset, features_list,
@@ -202,12 +213,10 @@ print feature_sc
 
 # Provided to give you a starting point. Try a variety of classifiers.
 
-from sklearn.cross_validation import train_test_split
-from sklearn.feature_selection import SelectKBest
 from sklearn.ensemble import RandomForestClassifier as RFC
 from sklearn.pipeline import Pipeline
 from sklearn.decomposition import PCA
-from sklearn.svm import SVC
+from sklearn.metrics import classification_report as classReport
 
 def doPipes(steps):
     pipe = Pipeline(steps)
@@ -217,6 +226,11 @@ def doPipes(steps):
 def getAccuracy(pipe):
     pred = pipe.fit(features_train, labels_train).predict(features_test)
     return round(accuracy_score(labels_test, pred), 2)
+
+def getClassReport(pipe):
+    pipe.fit(features_train, labels_train)
+    pred = pipe.predict(features_test)
+    return classReport(labels_test, pred)
 
 scalepcasvc = doPipes([
     ("scale", MinMaxScaler()),
@@ -240,10 +254,18 @@ scalepcadtc = doPipes([
     ("dtc", DTC())
 ])
 
-print getAccuracy(selectKrfc), ": SelectKBest, RandomForest"
-print getAccuracy(scalepcasvc), ": Scale, PCA, SVC"
-print getAccuracy(selectKsteps), ": SelectKBest, GaussianNB"
-print getAccuracy(scalepcasvc), ": Scale, PCA, DecisionTree"
+print "SelectKBest, RandomForest"
+print getAccuracy(selectKrfc), ": Accuracy Score"
+print getClassReport(selectKrfc)
+print "Scale, PCA, SVC"
+print getAccuracy(scalepcasvc), ": Accuracy Score"
+print getClassReport(scalepcasvc)
+print "SelectKBest, GaussianNB"
+print getAccuracy(selectKsteps), ": Accuracy Score"
+print getClassReport(selectKsteps)
+print "Scale, PCA, DecisionTree"
+print getAccuracy(scalepcadtc), ": Accuracy Score"
+print getClassReport(scalepcadtc)
 
 ### Task 5: Tune your classifier to achieve better than .3 precision and recall 
 ### using our testing script. Check the tester.py script in the final project
@@ -253,26 +275,34 @@ print getAccuracy(scalepcasvc), ": Scale, PCA, DecisionTree"
 ### http://scikit-learn.org/stable/modules/generated/sklearn.cross_validation.StratifiedShuffleSplit.html
 
 from sklearn.grid_search import GridSearchCV as GridSVC
-from sklearn.metrics import classification_report as classReport
 
 param = dict(
     pca__n_components = [1, 2, 3, 4, 5, 6],
     dtc__min_samples_split = [2, 4]
 )
 
-clf = GridSVC(scalepcadtc, param_grid=param)
+clf = scalepcadtc # My Best Algorithm
 
-def getClassReport(pipe):
-    pipe.fit(features_train, labels_train)
-    pred = pipe.predict(features_test)
-    return classReport(labels_test, pred)
+cv = GridSVC(scalepcadtc, param_grid=param)
 
-print getAccuracy(clf), ": Accuracy Score"
-print getClassReport(clf)
+from sklearn.model_selection import StratifiedShuffleSplit
 
-from sklearn.metrics import precision_score
-clf.fit(features_train, labels_train)
-pred = clf.predict(features_test)
+sss = StratifiedShuffleSplit(n_splits=2, test_size=0.3, random_state=0)
+for train, test in sss.split(features, labels):
+    features_train = [features[ii] for ii in train]
+    features_test = [features[ii] for ii in test]
+    labels_train = [labels[ii] for ii in train]
+    labels_test = [labels[ii] for ii in test]
+
+print "Best Algorithm"
+print getAccuracy(cv), ": Accuracy Score"
+print getClassReport(cv)
+print "Best Parameters: ", cv.best_params_
+print "PCA explained variance: ", cv.best_estimator_.named_steps["pca"].explained_variance_
+print
+print "Alternative Algorithm"
+print getAccuracy(scalepcasvc), ": Accuracy Score"
+print getClassReport(scalepcasvc)
 
 ### Task 6: Dump your classifier, dataset, and features_list so anyone can
 ### check your results. You do not need to change anything below, but make sure
