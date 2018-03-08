@@ -1,3 +1,18 @@
+
+# coding: utf-8
+
+# # Enron POI Detector
+# ## 1. Data Exploration
+# Enron was a big scandal in Wallstreet that embodied greed, pride and fraud in Corporate America. Originally an energy company in Natural Gas, it became big when it started to trade energy in the stock exchange. They used this thing called "Mark-to-Market" pitch that basically allows them to sell their stock by reporting future earnings. Imagine if someone approached you and told you to invest in their company that will make 100 million USD even if their powerplant was not yet built. Naturally, everyone bought it and their prices went up. Long story short, the businesses went bankrupt after reporting huge losses and their investors lost their money. People responsible were called into question to answer for the fraud that they have commited.
+# 
+# ## 1.1. Objective of Analysis
+# The objective of this analysis is create an algorithm that will be able to identify Person of Interests or POI by using their emails and financials.
+# 
+# ## 1.2. Summary of Dataset
+# The dataset contains 146 People with 21 Features. The features are split according to Email and Financials of these people. There are 18 People marked as Person of Interest, which includes CEO Jeffrey Skillings, Chairman Kenneth Lay and CFO Andrew Fastow. 
+
+# In[137]:
+
 #!/usr/bin/python
 import sys
 import pickle
@@ -36,6 +51,12 @@ print "Count of POI: ", len(dict([(k,r) for k,r in my_dataset.iteritems() if r['
 ### Extract features and labels from dataset for local testing
 data = featureFormat(my_dataset, features_list, sort_keys=True, remove_all_zeroes=False)
 
+
+# ## 1.3. Outlier Removal
+# I made a scatter plot with salary and bonus in my axis to see any outliers in the dataset. Upon investigation, I discovered that *TOTAL* is included in the dataset, which is an outlier. In addition, I am seeing *THE TRAVEL AGENCY IN THE PARK* as another entry. Since we are developing a *Person* of of Interest detector, we remove this non-person entry.
+
+# In[138]:
+
 ### Task 2: Remove outliers
 ### Scatterplot function that marks the person of interest in red.
 def plotScatter(dat, title, labels=features_list):
@@ -55,6 +76,14 @@ data_dict.pop("THE TRAVEL AGENCY IN THE PARK", 0)
 data_dict.pop("TOTAL", 0)
 data = featureFormat(my_dataset, features_list, sort_keys=True, remove_all_zeroes=False)
 plotScatter(data, "After Outlier Removal")
+
+
+# ## 2.2. Create New Features
+# I suspect that POIs would be the ones who are either getting the most salaries or bonuses. But simply adding these two features would give us inconsistent results since they vary in scales. Therefore, for my first feature, I add the scaled versions of the salary and bonus and call it *bonus_salary*. In addition, **I have scaled all the features in the features_list to effectively normalize the features.**
+# 
+# I also assumed that POIs have a small circle and they would have constant communication with each other. AS a result, for my second feature, I divide the total emails sent to a POI over the total sent emails and call it *emailto_poi*.
+
+# In[139]:
 
 ### Task 3: Create new feature(s)
 from sklearn.preprocessing import MinMaxScaler
@@ -137,6 +166,31 @@ plotComparison(labels, emailto_poi, bonus_sm)
 my_dataset = addNewFeature(my_dataset, bonus_sm, "bonus_salary")
 my_dataset = addNewFeature(my_dataset, emailto_poi, "emailto_poi")
 
+
+# ## 2.2. Test Custom Features
+# After creating my new features, I put them to the test. Below are the results:
+# 
+# SVM 
+# - accuracy score:  0.8864
+# - precision score:  0.0
+# - recall score:  0.0
+# 
+# Decision Tree 
+# - accuracy score:  0.8636
+# - precision score:  0.3333
+# - recall score:  0.2
+# 
+# Gaussian
+# - accuracy score:  0.8409
+# - precision score:  0.0
+# - recall score:  0.0
+# 
+# The SVM seems to be producing the greatest accuracy score but it is not good in identifying our POIs in terms of precision and recall. The second best classifier is the Decision Tree where it scored 0.8638 in accuracy and was able to score 0.33 and 0.2 in precision and recall, respectively. Using Gaussian Naive Bayes as a classifier is the least performing amongst the 3 classifiers.
+# 
+# I add *bonus_salary* and *emailto_poi* to my_dataset.
+
+# In[140]:
+
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier as DTC
 from sklearn.naive_bayes import GaussianNB as GNB
@@ -150,8 +204,7 @@ labels, features = targetFeatureSplit(data)
 
 custom_features = selectFeatures(features, ["bonus_salary", "emailto_poi"])
 
-features_train, features_test, labels_train, labels_test = \
-    train_test_split(custom_features, labels, test_size=0.3, random_state=42)
+features_train, features_test, labels_train, labels_test =     train_test_split(custom_features, labels, test_size=0.3, random_state=42)
 
 clf = SVC()
 clf.fit(features_train, labels_train)
@@ -177,13 +230,18 @@ print "Gaussian precision score: ", round(precision_score(labels_test, pred), 4)
 print "Gaussian recall score: ", round(recall_score(labels_test, pred), 4)
 print
 
+
+# ## 2.3. Automated Feature Selection
+# I want to make sure that I have covered everything. So, after adding my new features to *my_dataset*, I use SelectKBest to choose the best features that would give me the most information. Then, I print out each feature ranked according to their scores. Reviewing the results, it seems that my features are within the the top 6 of the best features.
+
+# In[141]:
+
 from sklearn.feature_selection import SelectKBest
 
 data = featureFormat(my_dataset, features_list,
                      sort_keys=True, remove_all_zeroes=False)
 labels, features = targetFeatureSplit(data)
-features_train, features_test, labels_train, labels_test = \
-    train_test_split(features, labels, test_size=0.3, random_state=42)
+features_train, features_test, labels_train, labels_test =     train_test_split(features, labels, test_size=0.3, random_state=42)
 
 clf = SelectKBest(k = 6)
 clf.fit_transform(features_train, labels_train)
@@ -204,6 +262,17 @@ def findScores(score, names):
 
 feature_sc = findScores(clf.scores_, features_list)
 print feature_sc
+
+
+# ## 3.1. Try a Variety of Classifiers and Pick the Best
+# After trying several Classifiers, I ended up choosing *scalepcadtc* as my classifier because it had the good score in precision and recall. Below are the results of each classifier that I have used and the sequence of model.
+# 
+# - 0.84 : SelectKBest, RandomForest
+# - 0.89 : Scale, PCA, SVC
+# - 0.86 : SelectKBest, GaussianNB
+# - 0.84 : Scale, PCA, DecisionTree
+
+# In[142]:
 
 ### Task 4: Try a varity of classifiers
 ### Please name your classifier clf for easy export below.
@@ -267,6 +336,12 @@ print "Scale, PCA, DecisionTree"
 print getAccuracy(scalepcadtc), ": Accuracy Score"
 print getClassReport(scalepcadtc)
 
+
+# ## 4.1. Tune Best Algorithm
+# After selecting my classifier, I then tune the parameters in an attempt to find the appropriate configuration that would give me the best results. If I do not do this well or if I do not do it at all, I will run the risk of missing out on the best configuration of my chosen classifier. To help me tune my parameters, I will be using *GridSearchCV* to help me run several versions of the parameters and find the best one. I try a PCA range from 2, 4 and 6 components and a DecisionTreeClassifier that had minimum sample split of 6 and 7.
+
+# In[143]:
+
 ### Task 5: Tune your classifier to achieve better than .3 precision and recall 
 ### using our testing script. Check the tester.py script in the final project
 ### folder for details on the evaluation method, especially the test_classifier
@@ -277,13 +352,55 @@ print getClassReport(scalepcadtc)
 from sklearn.grid_search import GridSearchCV as GridSVC
 
 param = dict(
-    pca__n_components = [1, 2, 3, 4, 5, 6],
-    dtc__min_samples_split = [2, 4]
+    pca__n_components = [2, 4, 6],
+    dtc__min_samples_split = [6, 7]
 )
 
 clf = scalepcadtc # My Best Algorithm
 
-cv = GridSVC(scalepcadtc, param_grid=param)
+cv = GridSVC(clf, param_grid=param)
+
+
+# ## 5.1. Validation
+# Validation allows us to check our algoritm's effectiveness by splitting our dataset where we can train our algorithm on one set and test on another, which helps us check for overfitting. 
+# 
+# In this analysis, I have been using *train_test_split* to split our data where 30% goes to testing and 70% goes to training set. But to test my best algorithm and the alternative algorithm, I use *StratifiedShuffleSplit*, which returns a a stratified randomized folds. I maintained splits of 2 and a test size of 30%. This is much better than *train_test_split* because it shuffles the dataset while keeping the percentage of the target class to the overall dataset, which is ideal for a small dataset such as this one.
+
+# ## 6.1. Evaluation Metrics
+# Running getClassReport, I get an accuracy score of 0.75 for my chosen classifier. After running the *getClassReport*, I get an average precision score of 0.40, which means that my classifier has a 40% of a chance to correctly identify a POI out of the all of the items labeled as POIs in the dataset. I also got a recall score of 0.40, which means that, out of the total True POIs, our algorithm is able to identify 40% of the True POIs.
+# 
+# The best parameters according to the Grid Search is if we set the *min_samples_split* of the Decision Tree Classifier to 6 and if we select only 2 components in the PCA. The first PCA component explains 23% of the variation in the data and th second component 8%.
+# 
+#     Best Algorithm
+#     Scale, PCA, DTC
+#     0.75: Accuracy Score
+#     
+#     Validation Score
+#     labels    precis    recall    F1       support
+#     0.0       0.92      0.92      0.92     39
+#     1.0       0.40      0.40      0.40      5
+#               0.86      0.86      0.86     44      avg / total
+#               
+#     Best Parameters:  {'dtc__min_samples_split': 6, 'pca__n_components': 2}
+#     PCA explained variance:  [ 0.22663112  0.08181349]
+#               
+# Had I chosen the *scalepcasvc* (without tuning the parameters), it will give me a high accuracy score of 0.89 but a 0.0 precision score and 0.0 recall score in identifying POIs. Accuracy simply takes the number of points that the algorithm has labeled correctly, either 0.0 or 1.0, and divide it by the total number of datapoints. In this scenario, our algorithm is able to recall all non-POIs (labeled 0.0) but it was not able to recall any POIs (labeled 1.0). In addition, with a precision of 0.89 at identifying non-POIs, I would suspect that the algorithm are just identifying all datapoints as non-POIs.
+# 
+#     Alternative Algorithm
+#     Scale, PCA, SVC
+#     0.89 : Accuracy Score
+#     
+#     Validation Score
+#                  precision    recall  f1-score   support
+# 
+#             0.0       0.89      1.00      0.94        39
+#             1.0       0.00      0.00      0.00         5
+# 
+#     avg / total       0.79      0.89      0.83        44
+#     
+# 
+
+# In[144]:
 
 from sklearn.model_selection import StratifiedShuffleSplit
 
@@ -304,9 +421,25 @@ print "Alternative Algorithm"
 print getAccuracy(scalepcasvc), ": Accuracy Score"
 print getClassReport(scalepcasvc)
 
+
+# In[145]:
+
 ### Task 6: Dump your classifier, dataset, and features_list so anyone can
 ### check your results. You do not need to change anything below, but make sure
 ### that the version of poi_id.py that you submit can be run on its own and
 ### generates the necessary .pkl files for validating your results.
 
 dump_classifier_and_data(clf, my_dataset, features_list)
+
+
+# ## Sources
+# - https://www.civisanalytics.com/blog/workflows-in-python-using-pipeline-and-gridsearchcv-for-more-compact-and-comprehensive-code/
+# - http://abshinn.github.io/python/sklearn/2014/06/08/grid-searching-in-all-the-right-places/
+# - http://scikit-learn.org/stable/auto_examples/model_selection/grid_search_text_feature_extraction.html
+# - http://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.GaussianNB.html
+# - http://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html
+# - http://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html
+# - http://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html
+# - http://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectKBest.html
+# - http://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html
+# - http://scikit-learn.org/stable/modules/generated/sklearn.model_selection.StratifiedShuffleSplit.html

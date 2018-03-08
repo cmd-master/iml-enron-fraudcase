@@ -54,6 +54,7 @@ data = featureFormat(my_dataset, features_list, sort_keys=True, remove_all_zeroe
     Count of Features:  21
     Count of POI:  18
 
+
 ## 1.3. Outlier Removal
 I made a scatter plot with salary and bonus in my axis to see any outliers in the dataset. Upon investigation, I discovered that *TOTAL* is included in the dataset, which is an outlier. In addition, I am seeing *THE TRAVEL AGENCY IN THE PARK* as another entry. Since we are developing a *Person* of of Interest detector, we remove this non-person entry.
 
@@ -258,6 +259,8 @@ print
     Gaussian precision score:  0.0
     Gaussian recall score:  0.0
 
+
+
 ## 2.3. Automated Feature Selection
 I want to make sure that I have covered everything. So, after adding my new features to *my_dataset*, I use SelectKBest to choose the best features that would give me the most information. Then, I print out each feature ranked according to their scores. Reviewing the results, it seems that my features are within the the top 6 of the best features.
 
@@ -318,12 +321,12 @@ print feature_sc
 
 
 ## 3.1. Try a Variety of Classifiers and Pick the Best
-After trying several Classifiers, I ended up choosing *scalepcadtc* as my classifier because it had the highest accuracy score amongst the other classifiers that I have used. Below are the results of each classifier that I have used and the sequence of model.
+After trying several Classifiers, I ended up choosing *scalepcadtc* as my classifier because it had the good score in precision and recall. Below are the results of each classifier that I have used and the sequence of model.
 
-- 0.89 : SelectKBest, RandomForest
+- 0.84 : SelectKBest, RandomForest
 - 0.89 : Scale, PCA, SVC
 - 0.86 : SelectKBest, GaussianNB
-- 0.89 : Scale, PCA, DecisionTree
+- 0.84 : Scale, PCA, DecisionTree
 
 
 ```python
@@ -394,10 +397,10 @@ print getClassReport(scalepcadtc)
     0.89 : Accuracy Score
                  precision    recall  f1-score   support
 
-            0.0       0.89      1.00      0.94        39
+            0.0       0.88      0.97      0.93        39
             1.0       0.00      0.00      0.00         5
 
-    avg / total       0.79      0.89      0.83        44
+    avg / total       0.78      0.86      0.82        44
 
     Scale, PCA, SVC
     0.89 : Accuracy Score
@@ -426,8 +429,11 @@ print getClassReport(scalepcadtc)
 
     avg / total       0.82      0.82      0.82        44
 
+
+
 ## 4.1. Tune Best Algorithm
-After selecting my classifier, I then tune the parameters in an attempt to find the appropriate configuration that would give me the best results. If I do not do this well or if I do not do it at all, I will run the risk of missing out on the best configuration of my chosen classifier. To help me tune my parameters, I will be using *GridSearchCV* to help me run several versions of the parameters and find the best one. I try a PCA range from 1 to 6 components and a DecisionTreeClassifier that had minimum sample split of 2 and 4.
+After selecting my classifier, I then tune the parameters in an attempt to find the appropriate configuration that would give me the best results. If I do not do this well or if I do not do it at all, I will run the risk of missing out on the best configuration of my chosen classifier. To help me tune my parameters, I will be using *GridSearchCV* to help me run several versions of the parameters and find the best one. I try a PCA range from 2, 4 and 6 components and a DecisionTreeClassifier that had minimum sample split of 6 and 7.
+
 
 ```python
 ### Task 5: Tune your classifier to achieve better than .3 precision and recall
@@ -440,13 +446,13 @@ After selecting my classifier, I then tune the parameters in an attempt to find 
 from sklearn.grid_search import GridSearchCV as GridSVC
 
 param = dict(
-    pca__n_components = [1, 2, 3, 4, 5, 6],
-    dtc__min_samples_split = [2, 4]
+    pca__n_components = [2, 4, 6],
+    dtc__min_samples_split = [6, 7]
 )
 
 clf = scalepcadtc # My Best Algorithm
 
-cv = GridSVC(scalepcadtc, param_grid=param)
+cv = GridSVC(clf, param_grid=param)
 ```
 
 ## 5.1. Validation
@@ -455,22 +461,22 @@ Validation allows us to check our algoritm's effectiveness by splitting our data
 In this analysis, I have been using *train_test_split* to split our data where 30% goes to testing and 70% goes to training set. But to test my best algorithm and the alternative algorithm, I use *StratifiedShuffleSplit*, which returns a a stratified randomized folds. I maintained splits of 2 and a test size of 30%. This is much better than *train_test_split* because it shuffles the dataset while keeping the percentage of the target class to the overall dataset, which is ideal for a small dataset such as this one.
 
 ## 6.1. Evaluation Metrics
-Running getClassReport, I get an accuracy score of 0.82 for my chosen classifier. After running the *getClassReport*, I get an average precision score of 0.29, which means that my classifier has a 29% of a chance to correctly identify a POI out of the all of the items labeled as POIs in the dataset. I also got a recall score of 0.40, which means that, out of the total True POIs, our algorithm is able to identify 40% of the True POIs.
+Running getClassReport, I get an accuracy score of 0.75 for my chosen classifier. After running the *getClassReport*, I get an average precision score of 0.40, which means that my classifier has a 40% of a chance to correctly identify a POI out of the all of the items labeled as POIs in the dataset. I also got a recall score of 0.40, which means that, out of the total True POIs, our algorithm is able to identify 40% of the True POIs.
 
-The best parameters according to the Grid Search is if we set the *min_samples_split* of the Decision Tree Classifier to 2 and if we select only 1 component in the PCA. We can say that this PCA component explains 22% of the variation in the data.
+The best parameters according to the Grid Search is if we set the *min_samples_split* of the Decision Tree Classifier to 6 and if we select only 2 components in the PCA. The first PCA component explains 23% of the variation in the data and th second component 8%.
 
     Best Algorithm
     Scale, PCA, DTC
-    0.82: Accuracy Score
+    0.75: Accuracy Score
 
     Validation Score
     labels    precis    recall    F1       support
-    0.0       0.92      0.87      0.89     39
-    1.0       0.29      0.40      0.33      5
-              0.90      0.91      0.90     44      avg / total
+    0.0       0.92      0.92      0.92     39
+    1.0       0.40      0.40      0.40      5
+              0.86      0.86      0.86     44      avg / total
 
-    Best Parameters:  {'dtc__min_samples_split': 2, 'pca__n_components': 1}
-    PCA explained variance:  [ 0.22663112]
+    Best Parameters:  {'dtc__min_samples_split': 6, 'pca__n_components': 2}
+    PCA explained variance:  [ 0.22663112  0.08181349]
 
 Had I chosen the *scalepcasvc* (without tuning the parameters), it will give me a high accuracy score of 0.89 but a 0.0 precision score and 0.0 recall score in identifying POIs. Accuracy simply takes the number of points that the algorithm has labeled correctly, either 0.0 or 1.0, and divide it by the total number of datapoints. In this scenario, our algorithm is able to recall all non-POIs (labeled 0.0) but it was not able to recall any POIs (labeled 1.0). In addition, with a precision of 0.89 at identifying non-POIs, I would suspect that the algorithm are just identifying all datapoints as non-POIs.
 
@@ -511,16 +517,16 @@ print getClassReport(scalepcasvc)
 ```
 
     Best Algorithm
-    0.82 : Accuracy Score
+    0.75 : Accuracy Score
                  precision    recall  f1-score   support
 
-            0.0       0.92      0.87      0.89        39
-            1.0       0.29      0.40      0.33         5
+            0.0       0.92      0.92      0.92        39
+            1.0       0.40      0.40      0.40         5
 
-    avg / total       0.85      0.82      0.83        44
+    avg / total       0.86      0.86      0.86        44
 
-    Best Parameters:  {'dtc__min_samples_split': 2, 'pca__n_components': 1}
-    PCA explained variance:  [ 0.22663112]
+    Best Parameters:  {'dtc__min_samples_split': 6, 'pca__n_components': 2}
+    PCA explained variance:  [ 0.22663112  0.08181349]
 
     Alternative Algorithm
     0.89 : Accuracy Score
