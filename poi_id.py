@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import pprint
-sys.path.append("../tools/")
+#sys.path.append("../tools/")
 from feature_format import featureFormat, targetFeatureSplit
 from tester import dump_classifier_and_data
 from sklearn.cross_validation import train_test_split
