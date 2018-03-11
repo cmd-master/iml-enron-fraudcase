@@ -154,7 +154,7 @@ def plotComparison(labels, feat1, feat2):
     plt.xlabel("Email Sent to POI")
     plt.show()
 
-feat_re = doScale(features)
+feat_re = doScale(np.array(features))
 bonus_re = selectFeatures(feat_re, ["bonus", "salary"])
 bonus_sm = compute(bonus_re, "sum")
 

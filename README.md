@@ -1,12 +1,5 @@
 
 # Enron POI Detector
-## x. Getting started
-To run the poi_id.py or tester.py, run it in terminal using python interpreter. I have rearrange the files so that reviewers are able to run the files from the main folder.
-```
-$ python poi_id.py
-$ python tester.py
-```
-
 ## 1. Data Exploration
 Enron was a big scandal in Wallstreet that embodied greed, pride and fraud in Corporate America. Originally an energy company in Natural Gas, it became big when it started to trade energy in the stock exchange. They used this thing called "Mark-to-Market" pitch that basically allows them to sell their stock by reporting future earnings. Imagine if someone approached you and told you to invest in their company that will make 100 million USD even if their powerplant was not yet built. Naturally, everyone bought it and their prices went up. Long story short, the businesses went bankrupt after reporting huge losses and their investors lost their money. People responsible were called into question to answer for the fraud that they have commited.
 
@@ -25,7 +18,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import pprint
-#sys.path.append("../tools/")
+# sys.path.append("../tools/")
 from feature_format import featureFormat, targetFeatureSplit
 from tester import dump_classifier_and_data
 from sklearn.cross_validation import train_test_split
@@ -110,6 +103,7 @@ labels, features = targetFeatureSplit(data)
 
 def doScale(dat):
     scaler = MinMaxScaler()
+#     print dat
     rescaled = scaler.fit_transform(dat)
     return rescaled
 
@@ -172,7 +166,7 @@ def plotComparison(labels, feat1, feat2):
     plt.xlabel("Email Sent to POI")
     plt.show()
 
-feat_re = doScale(features)
+feat_re = doScale(np.array(features))
 bonus_re = selectFeatures(feat_re, ["bonus", "salary"])
 bonus_sm = compute(bonus_re, "sum")
 
@@ -401,7 +395,7 @@ print getClassReport(scalepcadtc)
 ```
 
     SelectKBest, RandomForest
-    0.89 : Accuracy Score
+    0.86 : Accuracy Score
                  precision    recall  f1-score   support
 
             0.0       0.88      0.97      0.93        39
@@ -428,7 +422,7 @@ print getClassReport(scalepcadtc)
     avg / total       0.86      0.86      0.86        44
 
     Scale, PCA, DecisionTree
-    0.84 : Accuracy Score
+    0.82 : Accuracy Score
                  precision    recall  f1-score   support
 
             0.0       0.90      0.90      0.90        39
@@ -524,7 +518,7 @@ print getClassReport(scalepcasvc)
 ```
 
     Best Algorithm
-    0.75 : Accuracy Score
+    0.8 : Accuracy Score
                  precision    recall  f1-score   support
 
             0.0       0.92      0.92      0.92        39
