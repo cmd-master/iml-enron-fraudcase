@@ -54,6 +54,7 @@ data = featureFormat(my_dataset, features_list, sort_keys=True, remove_all_zeroe
     Count of Features:  21
     Count of POI:  18
 
+
 ## 1.3. Outlier Removal
 I made a scatter plot with salary and bonus in my axis to see any outliers in the dataset. Upon investigation, I discovered that *TOTAL* is included in the dataset, which is an outlier. In addition, I am seeing *THE TRAVEL AGENCY IN THE PARK* as another entry. Since we are developing a *Person* of of Interest detector, we remove this non-person entry.
 
@@ -259,6 +260,8 @@ print
     Gaussian precision score:  0.0
     Gaussian recall score:  0.0
 
+
+
 ## 2.3. Automated Feature Selection
 I want to make sure that I have covered everything. So, after adding my new features to *my_dataset*, I use SelectKBest to choose the best features that would give me the most information. Then, I print out each feature ranked according to their scores. Reviewing the results, it seems that my features are within the the top 6 of the best features.
 
@@ -392,13 +395,13 @@ print getClassReport(scalepcadtc)
 ```
 
     SelectKBest, RandomForest
-    0.86 : Accuracy Score
+    0.84 : Accuracy Score
                  precision    recall  f1-score   support
 
-            0.0       0.90      0.97      0.94        39
-            1.0       0.50      0.20      0.29         5
+            0.0       0.88      0.92      0.90        39
+            1.0       0.00      0.00      0.00         5
 
-    avg / total       0.86      0.89      0.86        44
+    avg / total       0.78      0.82      0.80        44
 
     Scale, PCA, SVC
     0.89 : Accuracy Score
@@ -453,10 +456,6 @@ clf = scalepcadtc # My Best Algorithm
 
 cv = GridSVC(clf, param_grid=param)
 ```
-
-    C:\Users\Chris\Anaconda3\envs\py27\lib\site-packages\sklearn\grid_search.py:42: DeprecationWarning: This module was deprecated in version 0.18 in favor of the model_selection module into which all the refactored classes and functions are moved. This module will be removed in 0.20.
-      DeprecationWarning)
-
 
 ## 5.1. Validation
 Validation allows us to check our algoritm's effectiveness by splitting our dataset where we can train our algorithm on one set and test on another, which helps us check for overfitting.
@@ -522,7 +521,8 @@ print getClassReport(scalepcasvc)
 
 
 
-## 6.2. Configure Parameters on my Classfier
+## 6.2. Configure Parameters on my Classifier
+I configure my classifier according to the best parameters that my tests have identified.
 
 
 ```python
