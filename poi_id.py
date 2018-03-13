@@ -11,7 +11,8 @@
 # ## 1.2. Summary of Dataset
 # The dataset contains 146 People with 21 Features. The features are split according to Email and Financials of these people. There are 18 People marked as Person of Interest, which includes CEO Jeffrey Skillings, Chairman Kenneth Lay and CFO Andrew Fastow.
 
-# In[137]:
+# In[1]:
+
 
 #!/usr/bin/python
 import sys
@@ -20,7 +21,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import pprint
-#sys.path.append("../tools/")
+# sys.path.append("../tools/")
 from feature_format import featureFormat, targetFeatureSplit
 from tester import dump_classifier_and_data
 from sklearn.cross_validation import train_test_split
@@ -55,7 +56,8 @@ data = featureFormat(my_dataset, features_list, sort_keys=True, remove_all_zeroe
 # ## 1.3. Outlier Removal
 # I made a scatter plot with salary and bonus in my axis to see any outliers in the dataset. Upon investigation, I discovered that *TOTAL* is included in the dataset, which is an outlier. In addition, I am seeing *THE TRAVEL AGENCY IN THE PARK* as another entry. Since we are developing a *Person* of of Interest detector, we remove this non-person entry.
 
-# In[138]:
+# In[2]:
+
 
 ### Task 2: Remove outliers
 ### Scatterplot function that marks the person of interest in red.
@@ -71,11 +73,11 @@ def plotScatter(dat, title, labels=features_list):
     plt.title(title)
     plt.show()
 
-#plotScatter(data, "Before Outlier Removal")
+plotScatter(data, "Before Outlier Removal")
 data_dict.pop("THE TRAVEL AGENCY IN THE PARK", 0)
 data_dict.pop("TOTAL", 0)
 data = featureFormat(my_dataset, features_list, sort_keys=True, remove_all_zeroes=False)
-#plotScatter(data, "After Outlier Removal")
+plotScatter(data, "After Outlier Removal")
 
 
 # ## 2.2. Create New Features
@@ -83,7 +85,8 @@ data = featureFormat(my_dataset, features_list, sort_keys=True, remove_all_zeroe
 #
 # I also assumed that POIs have a small circle and they would have constant communication with each other. AS a result, for my second feature, I divide the total emails sent to a POI over the total sent emails and call it *emailto_poi*.
 
-# In[139]:
+# In[3]:
+
 
 ### Task 3: Create new feature(s)
 from sklearn.preprocessing import MinMaxScaler
@@ -92,6 +95,7 @@ labels, features = targetFeatureSplit(data)
 
 def doScale(dat):
     scaler = MinMaxScaler()
+#     print dat
     rescaled = scaler.fit_transform(dat)
     return rescaled
 
@@ -161,7 +165,7 @@ bonus_sm = compute(bonus_re, "sum")
 email_from = selectFeatures(features, ["from_this_person_to_poi", "from_messages"])
 emailto_poi = compute(email_from, "divide")
 
-#plotComparison(labels, emailto_poi, bonus_sm)
+plotComparison(labels, emailto_poi, bonus_sm)
 
 my_dataset = addNewFeature(my_dataset, bonus_sm, "bonus_salary")
 my_dataset = addNewFeature(my_dataset, emailto_poi, "emailto_poi")
@@ -189,7 +193,8 @@ my_dataset = addNewFeature(my_dataset, emailto_poi, "emailto_poi")
 #
 # I add *bonus_salary* and *emailto_poi* to my_dataset.
 
-# In[140]:
+# In[4]:
+
 
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier as DTC
@@ -234,7 +239,8 @@ print
 # ## 2.3. Automated Feature Selection
 # I want to make sure that I have covered everything. So, after adding my new features to *my_dataset*, I use SelectKBest to choose the best features that would give me the most information. Then, I print out each feature ranked according to their scores. Reviewing the results, it seems that my features are within the the top 6 of the best features.
 
-# In[141]:
+# In[5]:
+
 
 from sklearn.feature_selection import SelectKBest
 
@@ -272,7 +278,8 @@ print feature_sc
 # - 0.86 : SelectKBest, GaussianNB
 # - 0.84 : Scale, PCA, DecisionTree
 
-# In[142]:
+# In[6]:
+
 
 ### Task 4: Try a varity of classifiers
 ### Please name your classifier clf for easy export below.
@@ -338,9 +345,10 @@ print getClassReport(scalepcadtc)
 
 
 # ## 4.1. Tune Best Algorithm
-# After selecting my classifier, I then tune the parameters in an attempt to find the appropriate configuration that would give me the best results. If I do not do this well or if I do not do it at all, I will run the risk of missing out on the best configuration of my chosen classifier. To help me tune my parameters, I will be using *GridSearchCV* to help me run several versions of the parameters and find the best one. I try a PCA range from 2, 4 and 6 components and a DecisionTreeClassifier that had minimum sample split of 6 and 7.
+# After selecting my classifier, I then tune the parameters in an attempt to find the appropriate configuration that would give me the best results. If I do not do this well or if I do not do it at all, I will run the risk of missing out on the best configuration of my chosen classifier. To help me tune my parameters, I will be using *GridSearchCV* to help me run several versions of the parameters and find the best one. I try a PCA range from 2, 4 and 6 components, a DecisionTreeClassifier that had minimum sample split of 6 and a series of class_weight {0:.2, 1:.8}, {0:.5, 1:.5}, {0:.4, 1:.6}.
 
-# In[143]:
+# In[7]:
+
 
 ### Task 5: Tune your classifier to achieve better than .3 precision and recall
 ### using our testing script. Check the tester.py script in the final project
@@ -352,8 +360,9 @@ print getClassReport(scalepcadtc)
 from sklearn.grid_search import GridSearchCV as GridSVC
 
 param = dict(
-    pca__n_components = [2, 4, 6],
-    dtc__min_samples_split = [6, 7]
+    pca__n_components = [2, 5, 6],
+    dtc__min_samples_split = [6],
+    dtc__class_weight = [{0:.2, 1:.8}, {0:.5, 1:.5}, {0:.4, 1:.6}]
 )
 
 clf = scalepcadtc # My Best Algorithm
@@ -367,40 +376,10 @@ cv = GridSVC(clf, param_grid=param)
 # In this analysis, I have been using *train_test_split* to split our data where 30% goes to testing and 70% goes to training set. But to test my best algorithm and the alternative algorithm, I use *StratifiedShuffleSplit*, which returns a a stratified randomized folds. I maintained splits of 2 and a test size of 30%. This is much better than *train_test_split* because it shuffles the dataset while keeping the percentage of the target class to the overall dataset, which is ideal for a small dataset such as this one.
 
 # ## 6.1. Evaluation Metrics
-# Running getClassReport, I get an accuracy score of 0.75 for my chosen classifier. After running the *getClassReport*, I get an average precision score of 0.40, which means that my classifier has a 40% of a chance to correctly identify a POI out of the all of the items labeled as POIs in the dataset. I also got a recall score of 0.40, which means that, out of the total True POIs, our algorithm is able to identify 40% of the True POIs.
-#
-# The best parameters according to the Grid Search is if we set the *min_samples_split* of the Decision Tree Classifier to 6 and if we select only 2 components in the PCA. The first PCA component explains 23% of the variation in the data and th second component 8%.
-#
-#     Best Algorithm
-#     Scale, PCA, DTC
-#     0.75: Accuracy Score
-#
-#     Validation Score
-#     labels    precis    recall    F1       support
-#     0.0       0.92      0.92      0.92     39
-#     1.0       0.40      0.40      0.40      5
-#               0.86      0.86      0.86     44      avg / total
-#
-#     Best Parameters:  {'dtc__min_samples_split': 6, 'pca__n_components': 2}
-#     PCA explained variance:  [ 0.22663112  0.08181349]
-#
-# Had I chosen the *scalepcasvc* (without tuning the parameters), it will give me a high accuracy score of 0.89 but a 0.0 precision score and 0.0 recall score in identifying POIs. Accuracy simply takes the number of points that the algorithm has labeled correctly, either 0.0 or 1.0, and divide it by the total number of datapoints. In this scenario, our algorithm is able to recall all non-POIs (labeled 0.0) but it was not able to recall any POIs (labeled 1.0). In addition, with a precision of 0.89 at identifying non-POIs, I would suspect that the algorithm are just identifying all datapoints as non-POIs.
-#
-#     Alternative Algorithm
-#     Scale, PCA, SVC
-#     0.89 : Accuracy Score
-#
-#     Validation Score
-#                  precision    recall  f1-score   support
-#
-#             0.0       0.89      1.00      0.94        39
-#             1.0       0.00      0.00      0.00         5
-#
-#     avg / total       0.79      0.89      0.83        44
-#
-#
+# Running getClassReport, I get an accuracy score of 0.75 for my chosen classifier. After running the *getClassReport*, I get an average precision score of 0.33, which means that my classifier has a 33% of a chance to correctly identify a POI out of the all of the items labeled as POIs in the dataset. I also got a recall score of 0.40, which means that, out of the total True POIs, our algorithm is able to identify 40% of the True POIs.
 
-# In[144]:
+# In[8]:
+
 
 from sklearn.model_selection import StratifiedShuffleSplit
 
@@ -411,18 +390,43 @@ for train, test in sss.split(features, labels):
     labels_train = [labels[ii] for ii in train]
     labels_test = [labels[ii] for ii in test]
 
+
+# The best parameters according to the Grid Search is if we set the *min_samples_split* of the Decision Tree Classifier to 6 and if we select only 2 components in the PCA. To have a balance of precision and recall scores, the best class_weight configuration is to have {0: 0.4, 1: 0.6}. The first PCA component explains 23% of the variation in the data and th second component 8%.
+
+# In[9]:
+
+
 print "Best Algorithm"
 print getAccuracy(cv), ": Accuracy Score"
 print getClassReport(cv)
 print "Best Parameters: ", cv.best_params_
 print "PCA explained variance: ", cv.best_estimator_.named_steps["pca"].explained_variance_
-print
+
+
+# Had I chosen the *scalepcasvc* (without tuning the parameters), it will give me a high accuracy score of 0.89 but a 0.0 precision score and 0.0 recall score in identifying POIs. Accuracy simply takes the number of points that the algorithm has labeled correctly, either 0.0 or 1.0, and divide it by the total number of datapoints. In this scenario, our algorithm is able to recall all non-POIs (labeled 0.0) but it was not able to recall any POIs (labeled 1.0). In addition, with a precision of 0.89 at identifying non-POIs, I would suspect that the algorithm are just identifying all datapoints as non-POIs.
+
+# In[10]:
+
+
 print "Alternative Algorithm"
 print getAccuracy(scalepcasvc), ": Accuracy Score"
 print getClassReport(scalepcasvc)
 
 
-# In[145]:
+# ## 6.2. Configure Parameters on my Classfier
+
+# In[11]:
+
+
+clf = doPipes([
+    ("scale", MinMaxScaler()),
+    ("pca", PCA(n_components = 2)),
+    ("dtc", DTC(min_samples_split = 6, class_weight = {0:.4, 1:.6}))
+])
+
+
+# In[12]:
+
 
 ### Task 6: Dump your classifier, dataset, and features_list so anyone can
 ### check your results. You do not need to change anything below, but make sure
